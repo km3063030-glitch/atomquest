@@ -70,9 +70,9 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 AtomQuest server running on http://localhost:${PORT}`);
-  console.log(`📊 API docs: http://localhost:${PORT}/api/health`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 AtomQuest server running on http://0.0.0.0:${PORT}`);
+  console.log(`📊 API docs: http://0.0.0.0:${PORT}/api/health`);
 });
 
 module.exports = app;
