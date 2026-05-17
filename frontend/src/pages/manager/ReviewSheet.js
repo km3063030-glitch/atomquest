@@ -15,7 +15,7 @@ export default function ReviewSheet() {
   const [goals, setGoals] = useState([]);
 
   useEffect(() => {
-    api.get(`/goals/team-sheets/${sheetId}`)
+    api.get(`/goals/sheet/${sheetId}`)
       .then(res => {
         setData(res.data);
         setGoals(res.data.goals || []);
@@ -40,10 +40,18 @@ export default function ReviewSheet() {
           target_value: g.target_value !== '' ? Number(g.target_value) : null,
           weightage: Number(g.weightage) || 0
         }));
-        await api.post(`/goals/team-sheets/${sheetId}/approve`, { goals: payload });
+        await api.post('/goals/approve', { 
+          sheet_id: sheetId, 
+          action: 'approve', 
+          edited_goals: payload 
+        });
         toast.success('Goal sheet approved and locked!');
       } else {
-        await api.post(`/goals/team-sheets/${sheetId}/return`, { reason: returnReason });
+        await api.post('/goals/approve', { 
+          sheet_id: sheetId, 
+          action: 'return', 
+          return_reason: returnReason 
+        });
         toast.success('Goal sheet returned for rework.');
       }
       navigate('/manager');
