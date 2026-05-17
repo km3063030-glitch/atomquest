@@ -9,9 +9,9 @@ export default function TeamGoals() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/goals/team-sheets')
+    api.get('/goals/team')
       .then(res => setTeam(res.data))
-      .catch(() => {})
+      .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, []);
 
