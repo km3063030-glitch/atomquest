@@ -28,6 +28,7 @@ function NavItem({ to, icon: Icon, label, onClick }) {
 
 function NotifDropdown({ onClose }) {
   const [data, setData] = useState({ notifications: [], unreadCount: 0 });
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get('/notifications').then(r => setData(r.data)).catch(() => {});
@@ -36,6 +37,11 @@ function NotifDropdown({ onClose }) {
   const markAll = async () => {
     await api.put('/notifications/read-all');
     setData(d => ({ ...d, notifications: d.notifications.map(n => ({ ...n, is_read: 1 })), unreadCount: 0 }));
+  };
+
+  const handleNotifClick = (n) => {
+    if (n.link) navigate(n.link);
+    onClose();
   };
 
   return (
@@ -47,7 +53,7 @@ function NotifDropdown({ onClose }) {
       {data.notifications.length === 0
         ? <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>No notifications</div>
         : data.notifications.slice(0, 10).map(n => (
-          <div key={n.id} className={`notif-item${n.is_read ? '' : ' unread'}`}>
+          <div key={n.id} className={`notif-item${n.is_read ? '' : ' unread'}`} onClick={() => handleNotifClick(n)} style={{ cursor: n.link ? 'pointer' : 'default' }}>
             <div className="notif-title">{n.title}</div>
             <div className="notif-msg">{n.message}</div>
             <div className="notif-time">{n.created_at ? formatDistanceToNow(new Date(n.created_at), { addSuffix: true }) : ''}</div>

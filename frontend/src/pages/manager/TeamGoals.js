@@ -45,23 +45,27 @@ export default function TeamGoals() {
                 </tr>
               </thead>
               <tbody>
-                {team.map(member => (
-                  <tr key={member.id}>
+                {team.map(item => (
+                  <tr key={item.employee.id}>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{member.employee_name}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{member.employee_email}</div>
+                      <div style={{ fontWeight: 600 }}>{item.employee.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.employee.email}</div>
                     </td>
-                    <td>{member.cycle_id || 'Current'}</td>
+                    <td>{item.cycle?.name || 'Current'}</td>
                     <td>
-                      <span className={`badge badge-${member.status || 'not_started'}`}>
-                        {member.status?.replace('_', ' ') || 'Not Started'}
+                      <span className={`badge badge-${item.sheet?.status || 'not_started'}`}>
+                        {item.sheet?.status?.replace('_', ' ') || 'Not Started'}
                       </span>
                     </td>
-                    <td>{member.total_weightage}%</td>
+                    <td>{item.sheet?.total_weightage || 0}%</td>
                     <td>
-                      <Link to={`/manager/review/${member.id}`} className="btn btn-secondary btn-sm">
-                        View Sheet
-                      </Link>
+                      {item.sheet ? (
+                        <Link to={`/manager/review/${item.sheet.id}`} className="btn btn-secondary btn-sm">
+                          View Sheet
+                        </Link>
+                      ) : (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No Sheet</span>
+                      )}
                     </td>
                   </tr>
                 ))}
