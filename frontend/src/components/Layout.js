@@ -1,17 +1,17 @@
 // src/components/Layout.js
-import React, { useState, useRef, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Target, BarChart3, Users, Settings, LogOut, Bell,
-  CheckSquare, ClipboardList, FileText, AlertTriangle, Share2, Shield,
-  RefreshCw, BookOpen
+  CheckSquare, FileText, AlertTriangle, Share2, Shield,
+  RefreshCw, Menu, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 
-function NavItem({ to, icon: Icon, label, onClick }) {
+function NavItem({ to, icon: Icon, label, onClick, onNav }) {
   if (onClick) {
     return (
       <button className="nav-item" onClick={onClick}>
@@ -20,7 +20,11 @@ function NavItem({ to, icon: Icon, label, onClick }) {
     );
   }
   return (
-    <NavLink to={to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+    <NavLink
+      to={to}
+      className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+      onClick={onNav}
+    >
       <Icon size={16} />{label}
     </NavLink>
   );
@@ -67,9 +71,14 @@ function NotifDropdown({ onClose }) {
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showNotif, setShowNotif] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef(null);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
   useEffect(() => {
     api.get('/notifications').then(r => setUnreadCount(r.data.unreadCount)).catch(() => {});
@@ -117,19 +126,39 @@ export default function Layout() {
     return [];
   };
 
-  const [pageTitle, setPageTitle] = useState('');
-
   return (
     <div className="app-layout">
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-text">AtomQuest</div>
-          <div className="sidebar-logo-sub">Goal Tracking Portal</div>
+      {/* Mobile overlay */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? ' open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
+        <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div className="sidebar-logo-text">AtomQuest</div>
+            <div className="sidebar-logo-sub">Goal Tracking Portal</div>
+          </div>
+          {/* Close button visible only on mobile */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'none', padding: '0.25rem' }}
+            className="sidebar-close-btn"
+          >
+            <X size={18} />
+          </button>
         </div>
         <nav className="sidebar-nav">
           <div className="nav-section-label">Navigation</div>
           {getNavItems().map(item => (
-            <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
+            <NavItem
+              key={item.to}
+              to={item.to}
+              icon={item.icon}
+              label={item.label}
+              onNav={() => setSidebarOpen(false)}
+            />
           ))}
         </nav>
         <div className="sidebar-footer">
@@ -147,9 +176,15 @@ export default function Layout() {
       </aside>
 
       <header className="top-header">
-        <div className="header-title">
-          {user?.department && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{user.department} · </span>}
-          <span style={{ textTransform: 'capitalize' }}>{user?.role} Portal</span>
+        {/* Hamburger */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button className="mobile-menu-btn" onClick={() => setSidebarOpen(s => !s)}>
+            <Menu size={22} />
+          </button>
+          <div className="header-title">
+            {user?.department && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{user.department} · </span>}
+            <span style={{ textTransform: 'capitalize' }}>{user?.role} Portal</span>
+          </div>
         </div>
         <div className="header-actions">
           <div style={{ position: 'relative' }} ref={notifRef}>

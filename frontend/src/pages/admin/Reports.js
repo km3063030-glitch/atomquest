@@ -1,6 +1,7 @@
 // src/pages/admin/Reports.js
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api';
+import toast from 'react-hot-toast';
 import { Download, Users, CheckCircle, Clock, BarChart2, Target, TrendingUp, Award } from 'lucide-react';
 
 const QUARTER_LABELS = { q1: 'Q1', q2: 'Q2', q3: 'Q3', q4_annual: 'Q4 / Annual' };
@@ -54,10 +55,26 @@ export default function AdminReports() {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const handleExportCSV = () => {
-    const token = localStorage.getItem('atomquest_token');
-    const base = process.env.REACT_APP_API_URL || '/api';
-    window.open(`${base}/reports/achievement?format=csv`, '_blank');
+  const handleExportCSV = async () => {
+    try {
+      const token = localStorage.getItem('atomquest_token');
+      const base = process.env.REACT_APP_API_URL || '/api';
+      const res = await fetch(`${base}/reports/achievement?format=csv`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'achievement_report.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Failed to export CSV');
+    }
   };
 
   if (loading) return <div className="loading-spinner"><div className="spinner" /></div>;
