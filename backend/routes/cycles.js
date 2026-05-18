@@ -41,16 +41,25 @@ router.post('/', authenticate, authorize('admin'), (req, res) => {
 
 // PUT /api/cycles/:id
 router.put('/:id', authenticate, authorize('admin'), (req, res) => {
-  const { name, window_open, window_close, is_active } = req.body;
+  const { name, window_open, window_close, is_active, phase } = req.body;
   const db = getDb();
 
   if (is_active) {
     db.prepare('UPDATE goal_cycles SET is_active = 0').run();
   }
 
-  db.prepare(`
-    UPDATE goal_cycles SET name=?, window_open=?, window_close=?, is_active=? WHERE id=?
-  `).run(name, window_open, window_close, is_active ? 1 : 0, req.params.id);
+  const validPhases = ['goal_setting', 'goal_review', 'check_in', 'appraisal', 'closed'];
+  const safePhase = validPhases.includes(phase) ? phase : undefined;
+
+  if (safePhase) {
+    db.prepare(`
+      UPDATE goal_cycles SET name=?, window_open=?, window_close=?, is_active=?, phase=? WHERE id=?
+    `).run(name, window_open, window_close, is_active ? 1 : 0, safePhase, req.params.id);
+  } else {
+    db.prepare(`
+      UPDATE goal_cycles SET name=?, window_open=?, window_close=?, is_active=? WHERE id=?
+    `).run(name, window_open, window_close, is_active ? 1 : 0, req.params.id);
+  }
 
   const cycle = db.prepare('SELECT * FROM goal_cycles WHERE id = ?').get(req.params.id);
   res.json(cycle);
