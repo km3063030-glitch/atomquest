@@ -113,6 +113,70 @@ router.post('/', authenticate, authorize('employee'), (req, res) => {
   res.json(updated);
 });
 
+// POST /api/achievements/sync — sync multiple achievements
+router.post('/sync', authenticate, authorize('employee'), (req, res) => {
+  const { achievements, cycle_id } = req.body;
+  if (!achievements || !Array.isArray(achievements)) return res.status(400).json({ error: 'achievements array required' });
+
+  const validQuarters = ['q1', 'q2', 'q3', 'q4_annual'];
+  const db = getDb();
+
+  for (const ach of achievements) {
+    const { goal_id, quarter, actual_value, actual_date, status, employee_notes } = ach;
+    if (!goal_id || !quarter || !validQuarters.includes(quarter)) continue;
+
+    const goal = db.prepare(`
+      SELECT g.*, gs.employee_id, gs.cycle_id FROM goals g
+      JOIN goal_sheets gs ON g.sheet_id = gs.id
+      WHERE g.id = ?
+    `).get(goal_id);
+
+    if (!goal || goal.employee_id !== req.user.id) continue;
+
+    const sheet = db.prepare('SELECT * FROM goal_sheets WHERE id = ?').get(goal.sheet_id);
+    if (!['approved', 'locked'].includes(sheet.status)) continue;
+
+    const progressScore = computeProgressScore({
+      uomType: goal.uom_type,
+      targetValue: goal.target_value,
+      actualValue: actual_value,
+      targetDate: goal.target_date,
+      actualDate: actual_date
+    });
+
+    const existing = db.prepare('SELECT id FROM achievements WHERE goal_id = ? AND cycle_id = ? AND quarter = ?').get(goal_id, goal.cycle_id, quarter);
+
+    if (existing) {
+      db.prepare(`
+        UPDATE achievements SET actual_value=?, actual_date=?, status=?, progress_score=?, employee_notes=?, updated_at=datetime('now')
+        WHERE id=?
+      `).run(actual_value, actual_date || null, status || 'on_track', progressScore, employee_notes || null, existing.id);
+    } else {
+      db.prepare(`
+        INSERT INTO achievements (goal_id, cycle_id, quarter, actual_value, actual_date, status, progress_score, employee_notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(goal_id, goal.cycle_id, quarter, actual_value, actual_date || null, status || 'on_track', progressScore, employee_notes || null);
+    }
+
+    if (goal.shared_from_goal_id || goal.is_shared) {
+      const linkedGoals = db.prepare('SELECT id FROM goals WHERE shared_from_goal_id = ? OR id = ?').all(goal_id, goal.shared_from_goal_id || 0);
+      linkedGoals.forEach(linked => {
+        if (linked.id !== goal_id) {
+          const linkedGoalFull = db.prepare('SELECT *, (SELECT cycle_id FROM goal_sheets WHERE id=goals.sheet_id) as cycle_id FROM goals WHERE id=?').get(linked.id);
+          db.prepare(`
+            INSERT OR REPLACE INTO achievements (goal_id, cycle_id, quarter, actual_value, actual_date, status, progress_score, employee_notes, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `).run(linked.id, linkedGoalFull.cycle_id, quarter, actual_value, actual_date || null, status || 'on_track', progressScore, employee_notes || null);
+        }
+      });
+    }
+
+    logAudit({ entityType: 'achievement', entityId: goal_id, action: 'updated', changedBy: req.user.id, changedByName: req.user.name, newValue: { actual_value, quarter, status } });
+  }
+
+  res.json({ message: 'Achievements synced successfully' });
+});
+
 // GET /api/achievements/summary/:sheet_id — full summary with scores
 router.get('/summary/:sheet_id', authenticate, (req, res) => {
   const db = getDb();
