@@ -138,6 +138,34 @@ router.get('/team', authenticate, authorize('manager', 'admin'), (req, res) => {
   res.json(result);
 });
 
+// GET /api/goals/team-sheets — manager: get team's sheets (flat list)
+router.get('/team-sheets', authenticate, authorize('manager', 'admin'), (req, res) => {
+  const { cycle_id } = req.query;
+  const db = getDb();
+
+  const activeCycle = cycle_id
+    ? db.prepare('SELECT * FROM goal_cycles WHERE id = ?').get(cycle_id)
+    : db.prepare('SELECT * FROM goal_cycles WHERE is_active = 1').get();
+
+  if (!activeCycle) return res.status(404).json({ error: 'No active goal cycle found' });
+
+  let query = `
+    SELECT gs.*, u.name as employee_name, u.email as employee_email, u.department
+    FROM goal_sheets gs
+    JOIN users u ON gs.employee_id = u.id
+    WHERE gs.cycle_id = ?
+  `;
+  const params = [activeCycle.id];
+
+  if (req.user.role === 'manager') {
+    query += ' AND u.manager_id = ?';
+    params.push(req.user.id);
+  }
+
+  const sheets = db.prepare(query).all(...params);
+  res.json(sheets);
+});
+
 // POST /api/goals/save — save draft goals
 router.post('/save', authenticate, authorize('employee'), (req, res) => {
   const { cycle_id, goals: goalsData } = req.body;
