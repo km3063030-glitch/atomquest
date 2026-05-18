@@ -343,7 +343,44 @@ if (sheetCount === 0 && cycle) {
   insertNotif.run(manager2.id,'Team Goals Approved','Alex Chen Q1: 99.7% uptime, zero incidents, 2 mentees promoted.','success',0,'/manager');
   insertNotif.run(admin.id,'System Ready','3 approved goal sheets, 15 goals, 14 achievements loaded. System ready for demo.','success',0,'/admin/reports');
 
-  console.log('✅ Sample data seeded (15 goals, 14 achievements, 3 check-ins, 10 notifications)');
+  // Audit log entries — realistic governance trail
+  const insertAudit = db.prepare(`
+    INSERT INTO audit_log (entity_type, entity_id, action, changed_by, changed_by_name, old_value, new_value, field_name, notes, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const ts = (daysAgo, hour = 9) => {
+    const d = new Date(); d.setDate(d.getDate() - daysAgo); d.setHours(hour, 0, 0, 0);
+    return d.toISOString();
+  };
+
+  // Cycle activation
+  insertAudit.run('cycle',   cycle.id,  'UPDATE', admin.id,    'Admin User',    '0',          '1',           'is_active', `Activated cycle: ${cycle.name}`,                         ts(30, 8));
+  // User creation
+  insertAudit.run('user',    emp1.id,   'CREATE', admin.id,    'Admin User',    null,         'employee',    'role',      'Created user: John Doe (employee@atomquest.com)',         ts(28, 10));
+  insertAudit.run('user',    emp2.id,   'CREATE', admin.id,    'Admin User',    null,         'employee',    'role',      'Created user: Priya Sharma (priya@atomquest.com)',        ts(28, 10));
+  insertAudit.run('user',    emp3.id,   'CREATE', admin.id,    'Admin User',    null,         'employee',    'role',      'Created user: Alex Chen (alex@atomquest.com)',            ts(27, 11));
+  // Goal sheet submissions
+  insertAudit.run('goal_sheet', s1,     'SUBMIT', emp1.id,     'John Doe',      'draft',      'submitted',   'status',    'Goal sheet submitted for FY 2025-26 approval',           ts(20, 14));
+  insertAudit.run('goal_sheet', s2,     'SUBMIT', emp2.id,     'Priya Sharma',  'draft',      'submitted',   'status',    'Goal sheet submitted for FY 2025-26 approval',           ts(19, 16));
+  insertAudit.run('goal_sheet', s3,     'SUBMIT', emp3.id,     'Alex Chen',     'draft',      'submitted',   'status',    'Goal sheet submitted for FY 2025-26 approval',           ts(18, 9));
+  // Manager approvals
+  insertAudit.run('goal_sheet', s1,     'APPROVE',manager1.id, 'Sarah Mitchell','submitted',  'approved',    'status',    'Approved goal sheet for John Doe',                       ts(16, 11));
+  insertAudit.run('goal_sheet', s2,     'APPROVE',manager1.id, 'Sarah Mitchell','submitted',  'approved',    'status',    'Approved goal sheet for Priya Sharma',                   ts(16, 11));
+  insertAudit.run('goal_sheet', s3,     'APPROVE',manager2.id, 'Raj Patel',     'submitted',  'approved',    'status',    'Approved goal sheet for Alex Chen',                      ts(15, 10));
+  // Goal updates
+  insertAudit.run('goal',    g1[0],     'UPDATE', emp1.id,     'John Doe',      '4000000',    '5000000',     'target_value','Revised revenue target after Q4 guidance',            ts(25, 15));
+  insertAudit.run('goal',    g2[3],     'UPDATE', emp2.id,     'Priya Sharma',  '2025-11-30', '2025-12-31',  'target_date','Extended automation playbook deadline by 1 month',     ts(22, 16));
+  // Achievement logs
+  insertAudit.run('achievement', 1,     'CREATE', emp1.id,     'John Doe',      null,         '0.84',        'progress_score','Q1 achievement logged: Revenue Growth',            ts(10, 10));
+  insertAudit.run('achievement', 2,     'CREATE', emp2.id,     'Priya Sharma',  null,         '0.93',        'progress_score','Q1 achievement logged: Lead Generation',          ts(10, 11));
+  insertAudit.run('achievement', 3,     'CREATE', emp3.id,     'Alex Chen',     null,         '1.00',        'progress_score','Q1 achievement logged: System Uptime',            ts(9,  9));
+  // Check-in
+  insertAudit.run('checkin', 1,         'CREATE', manager1.id, 'Sarah Mitchell',null,         'Q1 comment',  'quarter',   'Q1 check-in comment added for John Doe',                ts(7, 14));
+  insertAudit.run('checkin', 2,         'CREATE', manager1.id, 'Sarah Mitchell',null,         'Q1 comment',  'quarter',   'Q1 check-in comment added for Priya Sharma',            ts(7, 14));
+  insertAudit.run('checkin', 3,         'CREATE', manager2.id, 'Raj Patel',     null,         'Q1 comment',  'quarter',   'Q1 check-in comment added for Alex Chen',              ts(6, 10));
+
+  console.log('✅ Sample data seeded (15 goals, 14 achievements, 3 check-ins, 10 notifications, 18 audit logs)');
 } else if (sheetCount > 0) {
   console.log(`✅ Sample data already present (${sheetCount} sheets found) — skipping`);
 }
