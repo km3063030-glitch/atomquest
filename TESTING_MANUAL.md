@@ -59,3 +59,50 @@ This manual outlines the end-to-end testing scenarios required to verify the fun
 - [x] **TC-SYS-01: API State Sync** - Verify that saving drafts (GoalSheet) and syncing progress (Achievements) updates the frontend state immediately without requiring a page refresh.
 - [x] **TC-SYS-02: Database Constraints** - Verify that duplicate achievements for the same quarter are treated as updates (UPSERT) rather than creating duplicate rows.
 - [x] **TC-SYS-03: Notifications** - Verify that employees and managers receive notifications for actions like submission, approval, return, and shared goals.
+
+---
+
+## 6. Bonus / Good-to-Have Features
+
+> **Legend:** ✅ Implemented & Testable | ⚙️ Backend only (no UI) | ❌ Not implemented
+
+### 6.1 Microsoft Entra ID (Azure AD) Integration
+> ❌ **Not Implemented** — Out of scope for this submission. Standard JWT-based auth with role-based access control is used instead.
+
+- [ ] **TC-BONUS-01:** SSO login via Microsoft Entra ID / Azure AD
+- [ ] **TC-BONUS-02:** Org hierarchy auto-sync from Azure AD reporting lines
+- [ ] **TC-BONUS-03:** Role assignment from Azure AD group membership
+
+---
+
+### 6.2 Email & Microsoft Teams Integration
+> ❌ **Not Implemented** — In-app notifications are fully functional (see TC-SYS-03). Email/Teams delivery not wired.
+
+- [ ] **TC-BONUS-04:** Automated email sent on goal submission, approval, and rejection
+- [ ] **TC-BONUS-05:** Teams bot / adaptive card notification when team member submits goals
+- [ ] **TC-BONUS-06:** Deep-link from Teams notification → relevant goal sheet URL
+
+---
+
+### 6.3 Escalation Module (Rule-Based)
+> ✅ **Implemented** — Backend engine + Admin UI with live data and configurable rules.
+
+- [x] **TC-ESC-01: View Active Escalations** - Verify that the Admin Escalation page shows employees who have not submitted goals within N days of cycle open, with severity (High/Medium).
+- [x] **TC-ESC-02: Pending Approval Escalation** - Verify that managers who haven't approved a submitted sheet within N days appear in the escalation list.
+- [x] **TC-ESC-03: Configure Thresholds** - Verify that an Admin can change the `days_threshold` for each rule (e.g., goal_not_submitted, goal_not_approved) and save them via the "Escalation Rules" tab.
+- [x] **TC-ESC-04: Toggle Rule On/Off** - Verify that an Admin can disable an escalation rule (checkbox) so it no longer triggers alerts.
+- [x] **TC-ESC-05: All-Clear State** - Verify that when no escalations are active, the page shows a green "All Clear" confirmation message.
+
+---
+
+### 6.4 Analytics Module
+> ✅ **Implemented** — Full analytics available in the Admin Reports page (3 tabs).
+
+- [x] **TC-ANA-01: Overview Stats** - Verify that the Reports Overview tab shows Total Employees, Goals Submitted, Goals Approved, and Not Started counts for the active cycle.
+- [x] **TC-ANA-02: Quarterly Check-in Progress** - Verify that Q1–Q4 check-in completion counts are displayed accurately.
+- [x] **TC-ANA-03: Goal Distribution by UoM Type** - Verify that the UoM breakdown (Numeric Higher/Lower, Timeline, Zero-based) with percentage bars is correct.
+- [x] **TC-ANA-04: Goal Distribution by Thrust Area** - Verify that the Thrust Area breakdown shows goal count and employee count per area.
+- [x] **TC-ANA-05: Department Performance (QoQ Trends)** - Verify that average progress scores by department are shown as colour-coded progress bars (green ≥ 80%, yellow ≥ 50%, red < 50%).
+- [x] **TC-ANA-06: Manager Effectiveness Dashboard** - Verify that the Manager Breakdown tab shows each manager's team size, submission count, approval count, and submission/approval rates as visual bars.
+- [x] **TC-ANA-07: Achievement Detail View** - Verify that the Achievement Details tab lists all individual achievement records with Employee, Goal, Quarter, Actual, Status, and colour-coded Score columns.
+- [x] **TC-ANA-08: CSV Export** - Verify that clicking "Export CSV" downloads a file containing all achievement data including employee name, department, manager, goal title, UoM, target, quarter, actual, status, and score.
