@@ -75,9 +75,9 @@ export default function AdminUsers() {
 
       {showModal && (
         <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: 500 }}>
+          <div className="modal" style={{ maxWidth: 500 }}>
             <div className="modal-header">
-              <h3>Add New User</h3>
+              <div className="modal-title">Add New User</div>
               <button className="btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>
             <div className="modal-body">
