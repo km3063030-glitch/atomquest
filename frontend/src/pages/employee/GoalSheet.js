@@ -117,6 +117,15 @@ export default function GoalSheet() {
       }));
       const res = await api.post('/goals/save', { goals: payload, cycle_id: cycle?.id });
       setSheetData(res.data.sheet);
+      if (res.data.sheet?.goals?.length > 0) {
+        setGoals(res.data.sheet.goals.map(g => ({
+          ...g,
+          _id: g.id || Math.random().toString(36).slice(2),
+          thrust_area_id: g.thrust_area_id || '',
+          target_value: g.target_value ?? '',
+          target_date: g.target_date ?? ''
+        })));
+      }
       toast.success('Goals saved as draft');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to save goals');
@@ -141,6 +150,15 @@ export default function GoalSheet() {
       await api.post('/goals/save', { goals: payload, cycle_id: cycle?.id });
       const res = await api.post('/goals/submit', { cycle_id: cycle?.id });
       setSheetData(res.data.sheet);
+      if (res.data.sheet?.goals?.length > 0) {
+        setGoals(res.data.sheet.goals.map(g => ({
+          ...g,
+          _id: g.id || Math.random().toString(36).slice(2),
+          thrust_area_id: g.thrust_area_id || '',
+          target_value: g.target_value ?? '',
+          target_date: g.target_date ?? ''
+        })));
+      }
       toast.success('Goals submitted for manager approval!');
       setErrors([]);
     } catch (err) {
